@@ -9,10 +9,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-# ==============================
 # Preprocessing + Training
-# ==============================
-@st.cache_resource  # cache model training so it runs only once
+
+
 def train_model():
     # Load dataset
     Hepatitis = pd.read_csv("HepatitisCdataF.csv")
@@ -66,10 +65,10 @@ def train_model():
     return gb_model, label_encoder, scaler, acc, X.columns
 
 
-# ==============================
+
 # Streamlit UI
-# ==============================
-st.title("🦠 Hepatitis C Virus Prediction App")
+
+st.title(" Hepatitis C Virus Prediction App")
 st.write("This app predicts **Hepatitis C categories** using ML.")
 
 # Train or Load model
@@ -111,3 +110,4 @@ if st.button("Predict Hepatitis Category"):
     prediction = model.predict(input_df)[0]
     category = label_encoder.inverse_transform([prediction])[0]
     st.subheader(f"🧾 Prediction: {category}")
+
