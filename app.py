@@ -7,11 +7,9 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder, StandardScaler
 from imblearn.over_sampling import BorderlineSMOTE
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score
 
 # Preprocessing + Training
-
-
 def train_model():
     # Load dataset
     Hepatitis = pd.read_csv("HepatitisCdataF.csv")
@@ -39,6 +37,10 @@ def train_model():
     X = Hepatitis.drop("Category", axis=1)
     y = Hepatitis["Category"]
 
+    # Ensure y is integer labels for SMOTE
+    if y.dtype != "int64" and y.dtype != "int32":
+        y = LabelEncoder().fit_transform(y)
+
     # Handle imbalance
     bsmote = BorderlineSMOTE(random_state=42)
     X_res, y_res = bsmote.fit_resample(X, y)
@@ -57,10 +59,11 @@ def train_model():
     y_pred = gb_model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
 
-    # Save model + encoder
+    # Save model + encoder + scaler + feature names
     joblib.dump(gb_model, "hepatitis_model.pkl")
     joblib.dump(label_encoder, "label_encoder.pkl")
     joblib.dump(scaler, "scaler.pkl")
+    joblib.dump(X.columns, "feature_names.pkl")
 
     return gb_model, label_encoder, scaler, acc, X.columns
 
@@ -68,21 +71,23 @@ def train_model():
 
 # Streamlit UI
 
-st.title(" Hepatitis C Virus Prediction App")
+st.title("Hepatitis C Virus Prediction App")
 st.write("This app predicts **Hepatitis C categories** using ML.")
 
 # Train or Load model
-model, label_encoder, scaler, feature_names, acc, cols = None, None, None, None, None, None
 try:
     model = joblib.load("hepatitis_model.pkl")
     label_encoder = joblib.load("label_encoder.pkl")
     scaler = joblib.load("scaler.pkl")
     cols = joblib.load("feature_names.pkl")
+    acc = None  # accuracy not stored after reload
 except:
     model, label_encoder, scaler, acc, cols = train_model()
-    joblib.dump(cols, "feature_names.pkl")
 
-st.success(f"✅ Model trained with accuracy: {round(acc*100,2)}%")
+if acc:
+    st.success(f" Model trained with accuracy: {round(acc*100,2)}%")
+else:
+    st.info("Model loaded from saved file.")
 
 # Collect user input
 st.subheader("Enter Patient Details")
@@ -110,4 +115,3 @@ if st.button("Predict Hepatitis Category"):
     prediction = model.predict(input_df)[0]
     category = label_encoder.inverse_transform([prediction])[0]
     st.subheader(f"🧾 Prediction: {category}")
-
